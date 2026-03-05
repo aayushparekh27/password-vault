@@ -476,9 +476,7 @@ small {
     flex-wrap: wrap;
 }
 
-.dashboard-nav .logo {
-    font-size: clamp(20px, 5vw, 24px);
-}
+
 
 .dashboard-content {
     max-width: 1400px;
