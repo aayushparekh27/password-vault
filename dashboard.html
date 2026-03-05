@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Vault - Password Vault</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <nav class="dashboard-nav">
+            <div class="logo">🔐 My Vault</div>
+            <div class="nav-items">
+                <button onclick="logout()" class="btn btn-outline">Logout</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <div class="vault-header">
+                <h1>Your Passwords</h1>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Add New Password</button>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search websites..." onkeyup="searchPasswords()">
+            </div>
+
+            <div class="vault-grid" id="vaultGrid">
+                <div class="loading">Loading your vault...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Password Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>Add New Password</h2>
+            <form id="addPasswordForm">
+                <div class="form-group">
+                    <label for="website">Website</label>
+                    <input type="text" id="website" required placeholder="e.g., google.com">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username/Email</label>
+                    <input type="text" id="username" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Save Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Password Modal -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeViewModal()">&times;</span>
+            <h2 id="viewWebsite"></h2>
+            <div class="password-details">
+                <p><strong>Username:</strong> <span id="viewUsername"></span></p>
+                <p><strong>Password:</strong> 
+                    <span id="viewPassword">••••••••</span>
+                    <button onclick="togglePassword()" class="btn-icon">👁️</button>
+                    <button onclick="copyPassword()" class="btn-icon">📋</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/vault.js"></script>
+</body>
+</html>
