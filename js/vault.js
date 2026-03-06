@@ -1,6 +1,8 @@
 // Use window.supabaseClient instead of supabase
 let currentUser = null;
 let currentViewItem = null;
+let currentEditItem = null;
+let itemToDelete = null;
 
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadVaultItems();
     }
     
-    // Add password form handler - YAHAN FIX KIYA
+    // Add password form handler
     const addPasswordForm = document.getElementById('addPasswordForm');
     if (addPasswordForm) {
         addPasswordForm.addEventListener('submit', async function(e) {
@@ -65,12 +67,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             encrypted_password: encryptedPassword
                         }
                     ])
-                    .select(); // Add select to get the inserted data
+                    .select();
                 
                 if (error) {
                     console.error('Insert error:', error);
                     
-                    // Check if table exists
                     if (error.code === '42P01') {
                         alert('Database table not found. Please create the vault_items table in Supabase.');
                     } else {
@@ -91,6 +92,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 console.error('Unexpected error:', error);
+                alert('❌ Something went wrong: ' + error.message);
+            }
+        });
+    }
+    
+    // Edit password form handler
+    const editPasswordForm = document.getElementById('editPasswordForm');
+    if (editPasswordForm) {
+        editPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!window.supabaseClient) {
+                alert('Supabase not initialized!');
+                return;
+            }
+            
+            const id = document.getElementById('editId').value;
+            const website = document.getElementById('editWebsite').value;
+            const username = document.getElementById('editUsername').value;
+            const password = document.getElementById('editPassword').value;
+            
+            // Encrypt password
+            const encryptedPassword = encrypt(password);
+            
+            try {
+                const { error } = await window.supabaseClient
+                    .from('vault_items')
+                    .update({
+                        website: website,
+                        username: username,
+                        encrypted_password: encryptedPassword
+                    })
+                    .eq('id', id);
+                
+                if (error) {
+                    alert('Error updating password: ' + error.message);
+                    return;
+                }
+                
+                alert('✅ Password updated successfully!');
+                closeEditModal();
+                closeViewModal();
+                await loadVaultItems();
+                
+            } catch (error) {
                 alert('❌ Something went wrong: ' + error.message);
             }
         });
@@ -133,7 +179,6 @@ async function loadVaultItems() {
         if (error) {
             console.error('Fetch error:', error);
             
-            // Check if table exists
             if (error.code === '42P01') {
                 document.getElementById('vaultGrid').innerHTML = '<p class="error">Database table not found. Please create the vault_items table in Supabase.</p>';
             } else {
@@ -151,7 +196,7 @@ async function loadVaultItems() {
     }
 }
 
-// Display vault items
+// Display vault items with Edit and Delete buttons
 function displayVaultItems(items) {
     const grid = document.getElementById('vaultGrid');
     if (!grid) return;
@@ -162,14 +207,20 @@ function displayVaultItems(items) {
     }
     
     grid.innerHTML = items.map(item => `
-        <div class="vault-item" onclick='viewPassword(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
-            <h3>${item.website}</h3>
-            <p><strong>Username:</strong> ${item.username}</p>
-            <p><small>Added: ${new Date(item.created_at).toLocaleDateString('en-IN', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-            })}</small></p>
+        <div class="vault-item" data-id="${item.id}">
+            <div onclick='viewPassword(${JSON.stringify(item).replace(/'/g, "&apos;")})' style="cursor: pointer;">
+                <h3>${item.website}</h3>
+                <p><strong>Username:</strong> ${item.username}</p>
+                <p><small>Added: ${new Date(item.created_at).toLocaleDateString('en-IN', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                })}</small></p>
+            </div>
+            <div class="item-actions">
+                <button onclick='openEditModal(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="btn-icon edit-btn" title="Edit">✏️</button>
+                <button onclick='openDeleteModal(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="btn-icon delete-btn" title="Delete">🗑️</button>
+            </div>
         </div>
     `).join('');
 }
@@ -195,6 +246,30 @@ function closeAddModal() {
     }
 }
 
+function openEditModal(item) {
+    console.log('Opening edit modal for:', item.website);
+    currentEditItem = item;
+    
+    document.getElementById('editId').value = item.id;
+    document.getElementById('editWebsite').value = item.website;
+    document.getElementById('editUsername').value = item.username;
+    
+    try {
+        document.getElementById('editPassword').value = decrypt(item.encrypted_password);
+    } catch (error) {
+        console.error('Decryption error:', error);
+        document.getElementById('editPassword').value = '';
+    }
+    
+    document.getElementById('editModal').style.display = 'block';
+    closeViewModal();
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditItem = null;
+}
+
 function viewPassword(item) {
     console.log('Viewing password for:', item.website);
     currentViewItem = item;
@@ -208,6 +283,62 @@ function viewPassword(item) {
 function closeViewModal() {
     document.getElementById('viewModal').style.display = 'none';
     currentViewItem = null;
+}
+
+function editFromView() {
+    if (currentViewItem) {
+        openEditModal(currentViewItem);
+    }
+}
+
+function deleteFromView() {
+    if (currentViewItem) {
+        openDeleteModal(currentViewItem);
+    }
+}
+
+function openDeleteModal(item) {
+    console.log('Opening delete modal for:', item.website);
+    itemToDelete = item;
+    document.getElementById('deleteWebsite').textContent = item.website;
+    document.getElementById('deleteModal').style.display = 'block';
+    closeViewModal();
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    itemToDelete = null;
+}
+
+async function confirmDelete() {
+    if (!itemToDelete) {
+        closeDeleteModal();
+        return;
+    }
+    
+    if (!window.supabaseClient) {
+        alert('Supabase not initialized!');
+        return;
+    }
+    
+    try {
+        const { error } = await window.supabaseClient
+            .from('vault_items')
+            .delete()
+            .eq('id', itemToDelete.id);
+        
+        if (error) {
+            alert('Error deleting password: ' + error.message);
+            return;
+        }
+        
+        alert('✅ Password deleted successfully!');
+        closeDeleteModal();
+        await loadVaultItems();
+        
+    } catch (error) {
+        alert('❌ Something went wrong: ' + error.message);
+    }
 }
 
 function togglePassword() {
@@ -254,11 +385,19 @@ function searchPasswords() {
 window.onclick = function(event) {
     const addModal = document.getElementById('addModal');
     const viewModal = document.getElementById('viewModal');
+    const editModal = document.getElementById('editModal');
+    const deleteModal = document.getElementById('deleteModal');
     
     if (event.target === addModal) {
         closeAddModal();
     }
     if (event.target === viewModal) {
         closeViewModal();
+    }
+    if (event.target === editModal) {
+        closeEditModal();
+    }
+    if (event.target === deleteModal) {
+        closeDeleteModal();
     }
 }

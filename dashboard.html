@@ -9,10 +9,10 @@
 <body>
     <div class="dashboard">
         <nav class="dashboard-nav">
-<div class="logo">My Vault</div>
-<div class="nav-items">
-  <button onclick="logout()" class="btn btn-outline">Logout</button>
-</div>  
+            <div class="logo">My Vault</div>
+            <div class="nav-items">
+                <button onclick="logout()" class="btn btn-outline">Logout</button>
+            </div>  
         </nav>
 
         <div class="dashboard-content">
@@ -54,6 +54,30 @@
         </div>
     </div>
 
+    <!-- Edit Password Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Password</h2>
+            <form id="editPasswordForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editWebsite">Website</label>
+                    <input type="text" id="editWebsite" required placeholder="e.g., google.com">
+                </div>
+                <div class="form-group">
+                    <label for="editUsername">Username/Email</label>
+                    <input type="text" id="editUsername" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="editPassword">Password</label>
+                    <input type="password" id="editPassword" required placeholder="Enter password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Update Password</button>
+            </form>
+        </div>
+    </div>
+
     <!-- View Password Modal -->
     <div id="viewModal" class="modal">
         <div class="modal-content">
@@ -66,6 +90,23 @@
                     <button onclick="togglePassword()" class="btn-icon">👁️</button>
                     <button onclick="copyPassword()" class="btn-icon">📋</button>
                 </p>
+                <div class="modal-actions">
+                    <button onclick="editFromView()" class="btn btn-primary">✏️ Edit</button>
+                    <button onclick="deleteFromView()" class="btn btn-danger">🗑️ Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content delete-modal">
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete this password?</p>
+            <p><strong id="deleteWebsite"></strong></p>
+            <div class="modal-actions">
+                <button onclick="confirmDelete()" class="btn btn-danger">Yes, Delete</button>
+                <button onclick="closeDeleteModal()" class="btn btn-outline">Cancel</button>
             </div>
         </div>
     </div>
