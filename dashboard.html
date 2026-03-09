@@ -3,111 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Vault - Password Vault</title>
+    <title>Dashboard — My Vault</title>
     <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <div class="dashboard">
-        <nav class="dashboard-nav">
-            <div class="logo">My Vault</div>
-            <div class="nav-items">
-                <button onclick="logout()" class="btn btn-outline">Logout</button>
-            </div>  
-        </nav>
+    <div id="toast-container"></div>
 
-        <div class="dashboard-content">
-            <div class="vault-header">
-                <h1>Your Passwords</h1>
-                <button class="btn btn-primary" onclick="openAddModal()">+ Add New Password</button>
-            </div>
+    <!-- ─── Navbar ─────────────────────────────────────────── -->
+    <nav class="dashboard-nav">
+        <div class="logo">
+            <span class="logo-icon">🔐</span> My Vault
+        </div>
+        <div class="nav-user">
+            <div class="nav-avatar" id="navAvatar">U</div>
+            <span class="nav-email" id="navEmail"></span>
+            <button onclick="logout()" class="btn btn-outline btn-sm">Logout</button>
+        </div>
+    </nav>
 
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search websites..." onkeyup="searchPasswords()">
-            </div>
+    <!-- ─── Main Content ───────────────────────────────────── -->
+    <div class="dashboard-content">
+        <div class="vault-header">
+            <h1>Your Passwords</h1>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Add New</button>
+        </div>
 
-            <div class="vault-grid" id="vaultGrid">
-                <div class="loading">Loading your vault...</div>
+        <!-- Stats -->
+        <div class="vault-stats">
+            <div class="stat-card">
+                <div class="stat-num" id="totalPasswords">0</div>
+                <div class="stat-label">Saved Passwords</div>
             </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search by website or username…">
+            <button class="search-clear" id="searchClear">✕</button>
+        </div>
+
+        <!-- Grid -->
+        <div class="vault-grid" id="vaultGrid">
+            <div class="loading">Loading your vault…</div>
         </div>
     </div>
 
-    <!-- Add Password Modal -->
+    <!-- ─── Add Modal ───────────────────────────────────────── -->
     <div id="addModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeAddModal()">&times;</span>
-            <h2>Add New Password</h2>
+            <div class="modal-header">
+                <h2>Add Password</h2>
+                <button class="close-btn" onclick="closeAddModal()">✕</button>
+            </div>
             <form id="addPasswordForm">
                 <div class="form-group">
-                    <label for="website">Website</label>
-                    <input type="text" id="website" required placeholder="e.g., google.com">
+                    <label for="website">Website / App</label>
+                    <input type="text" id="website" required placeholder="e.g., github.com">
                 </div>
                 <div class="form-group">
-                    <label for="username">Username/Email</label>
+                    <label for="username">Username / Email</label>
                     <input type="text" id="username" required placeholder="Enter username">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter password">
+                    <div class="input-wrap">
+                        <input type="password" id="password" required placeholder="Enter password">
+                        <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
+                    </div>
+                    <div class="strength-bar"><div class="strength-fill" id="addStrengthFill"></div></div>
+                    <div class="strength-label" id="addStrengthLabel"></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('add')" style="font-size:13px;">⚡ Generate Password</button>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Save Password</button>
             </form>
         </div>
     </div>
 
-    <!-- Edit Password Modal -->
+    <!-- ─── Edit Modal ─────────────────────────────────────── -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>Edit Password</h2>
+            <div class="modal-header">
+                <h2>Edit Password</h2>
+                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            </div>
             <form id="editPasswordForm">
                 <input type="hidden" id="editId">
                 <div class="form-group">
-                    <label for="editWebsite">Website</label>
-                    <input type="text" id="editWebsite" required placeholder="e.g., google.com">
+                    <label for="editWebsite">Website / App</label>
+                    <input type="text" id="editWebsite" required placeholder="e.g., github.com">
                 </div>
                 <div class="form-group">
-                    <label for="editUsername">Username/Email</label>
+                    <label for="editUsername">Username / Email</label>
                     <input type="text" id="editUsername" required placeholder="Enter username">
                 </div>
                 <div class="form-group">
                     <label for="editPassword">Password</label>
-                    <input type="password" id="editPassword" required placeholder="Enter password">
+                    <div class="input-wrap">
+                        <input type="password" id="editPassword" required placeholder="Enter password">
+                        <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('edit')" style="font-size:13px;">⚡ Generate Password</button>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Update Password</button>
             </form>
         </div>
     </div>
 
-    <!-- View Password Modal -->
+    <!-- ─── View Modal ─────────────────────────────────────── -->
     <div id="viewModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeViewModal()">&times;</span>
-            <h2 id="viewWebsite"></h2>
-            <div class="password-details">
-                <p><strong>Username:</strong> <span id="viewUsername"></span></p>
-                <p><strong>Password:</strong> 
-                    <span id="viewPassword">••••••••</span>
-                    <button onclick="togglePassword()" class="btn-icon">👁️</button>
-                    <button onclick="copyPassword()" class="btn-icon">📋</button>
-                </p>
-                <div class="modal-actions">
-                    <button onclick="editFromView()" class="btn btn-primary">✏️ Edit</button>
-                    <button onclick="deleteFromView()" class="btn btn-danger">🗑️ Delete</button>
+            <div class="modal-header">
+                <div class="view-site-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">
+                    <div class="view-favicon" id="viewFavicon">🔐</div>
+                    <div>
+                        <div id="viewWebsite" style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;"></div>
+                    </div>
                 </div>
+                <button class="close-btn" onclick="closeViewModal()">✕</button>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+            <div class="detail-row">
+                <div class="detail-label">Username / Email</div>
+                <div class="detail-value">
+                    <span id="viewUsername2"></span>
+                    <div class="detail-actions">
+                        <button class="btn-icon" onclick="copyUsername()" title="Copy username">📋</button>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Password</div>
+                <div class="detail-value">
+                    <span id="viewPassword" style="font-family:monospace;letter-spacing:1px;">••••••••</span>
+                    <div class="detail-actions">
+                        <button class="btn-icon" onclick="togglePassword()" title="Show/hide">👁️</button>
+                        <button class="btn-icon" onclick="copyPassword()" title="Copy password">📋</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:20px;">
+                <button onclick="editFromView()" class="btn btn-outline">✏️ Edit</button>
+                <button onclick="deleteFromView()" class="btn btn-danger">🗑️ Delete</button>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- ─── Delete Modal ───────────────────────────────────── -->
     <div id="deleteModal" class="modal">
         <div class="modal-content delete-modal">
-            <h2>Confirm Delete</h2>
-            <p>Are you sure you want to delete this password?</p>
-            <p><strong id="deleteWebsite"></strong></p>
-            <div class="modal-actions">
-                <button onclick="confirmDelete()" class="btn btn-danger">Yes, Delete</button>
+            <div class="delete-icon">🗑️</div>
+            <h2>Delete Password?</h2>
+            <p>This action cannot be undone.</p>
+            <p class="delete-site" id="deleteWebsite"></p>
+            <div class="modal-actions" style="margin-top:24px;">
+                <button id="confirmDeleteBtn" onclick="confirmDelete()" class="btn btn-danger">Yes, Delete</button>
                 <button onclick="closeDeleteModal()" class="btn btn-outline">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ─── Generator Modal ────────────────────────────────── -->
+    <div id="generatorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚡ Password Generator</h2>
+                <button class="close-btn" onclick="closeGenerator()">✕</button>
+            </div>
+            <div class="generator-row">
+                <input type="text" id="genOutput" readonly placeholder="Generated password" style="font-family:monospace;font-size:13px;">
+                <button class="btn btn-ghost btn-sm" id="genRefresh" title="Regenerate">🔄</button>
+                <button class="btn btn-ghost btn-sm" id="genCopy" title="Copy">📋</button>
+            </div>
+            <div class="gen-length">
+                <span>Length</span>
+                <input type="range" id="genLength" min="8" max="32" value="16">
+                <span id="genLengthVal">16</span>
+            </div>
+            <div class="gen-options" style="margin-top:12px;">
+                <label class="gen-check"><input type="checkbox" id="genUpper" checked> A–Z</label>
+                <label class="gen-check"><input type="checkbox" id="genLower" checked> a–z</label>
+                <label class="gen-check"><input type="checkbox" id="genNums"  checked> 0–9</label>
+                <label class="gen-check"><input type="checkbox" id="genSyms"> !@#$…</label>
+            </div>
+            <button class="btn btn-primary btn-block" id="useGenPassword" style="margin-top:8px;">Use This Password</button>
         </div>
     </div>
 

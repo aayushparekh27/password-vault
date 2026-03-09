@@ -3,25 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Password Vault</title>
+    <title>Login — My Vault</title>
     <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
+    <div id="toast-container"></div>
+
+    <nav class="navbar">
+        <a class="logo" href="index.html" style="text-decoration:none;">
+            <span class="logo-icon">🔐</span> My Vault
+        </a>
+        <div class="nav-links">
+            <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+        </div>
+    </nav>
+
     <div class="auth-container">
         <div class="auth-card">
-            <h2>Login to Your Vault</h2>
+            <h2>Welcome back</h2>
+            <p class="auth-subtitle">Sign in to access your vault</p>
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="Enter your email">
+                    <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter your password">
+                    <div class="input-wrap">
+                        <input type="password" id="password" required placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:4px;">Login</button>
             </form>
-            <p class="auth-link">Don't have an account? <a href="register.html">Register here</a></p>
+
+            <p class="auth-link" style="margin-top:20px;">Don't have an account? <a href="register.html">Register here</a></p>
             <p class="auth-link">Back to <a href="index.html">Home</a></p>
         </div>
     </div>
