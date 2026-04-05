@@ -12,7 +12,7 @@
     <!-- ─── Navbar ─────────────────────────────────────────── -->
     <nav class="dashboard-nav">
         <div class="logo">
-            <span class="logo-icon">🔐</span> My Vault
+            <span class="logo-icon">🔐</span> My <em>Vault</em>
         </div>
         <div class="nav-user">
             <div class="nav-avatar" id="navAvatar">U</div>
@@ -32,7 +32,9 @@
         <div class="vault-stats">
             <div class="stat-card">
                 <div class="stat-num" id="totalPasswords">0</div>
-                <div class="stat-label">Saved Passwords</div>
+                <div>
+                    <div class="stat-label">Saved Passwords</div>
+                </div>
             </div>
         </div>
 
@@ -56,29 +58,27 @@
                 <h2>Add Password</h2>
                 <button class="close-btn" onclick="closeAddModal()">✕</button>
             </div>
-            <form id="addPasswordForm">
-                <div class="form-group">
-                    <label for="website">Website / App</label>
-                    <input type="text" id="website" required placeholder="e.g., github.com">
+            <div class="form-group">
+                <label for="addWebsite">Website / App</label>
+                <input type="text" id="addWebsite" placeholder="e.g., github.com">
+            </div>
+            <div class="form-group">
+                <label for="addUsername">Username / Email</label>
+                <input type="text" id="addUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="addPassword">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="addPassword" placeholder="Enter password">
+                    <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
                 </div>
-                <div class="form-group">
-                    <label for="username">Username / Email</label>
-                    <input type="text" id="username" required placeholder="Enter username">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-wrap">
-                        <input type="password" id="password" required placeholder="Enter password">
-                        <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
-                    </div>
-                    <div class="strength-bar"><div class="strength-fill" id="addStrengthFill"></div></div>
-                    <div class="strength-label" id="addStrengthLabel"></div>
-                </div>
-                <div style="display:flex;gap:8px;margin-bottom:16px;">
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('add')" style="font-size:13px;">⚡ Generate Password</button>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Save Password</button>
-            </form>
+                <div class="strength-bar"><div class="strength-fill" id="addStrengthFill"></div></div>
+                <div class="strength-label" id="addStrengthLabel"></div>
+            </div>
+            <div style="margin-bottom:16px;">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('add')" style="font-size:13px;">⚡ Generate Password</button>
+            </div>
+            <button id="addSaveBtn" class="btn btn-primary btn-block" onclick="submitAddPassword()">Save Password</button>
         </div>
     </div>
 
@@ -89,28 +89,26 @@
                 <h2>Edit Password</h2>
                 <button class="close-btn" onclick="closeEditModal()">✕</button>
             </div>
-            <form id="editPasswordForm">
-                <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label for="editWebsite">Website / App</label>
-                    <input type="text" id="editWebsite" required placeholder="e.g., github.com">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label for="editWebsite">Website / App</label>
+                <input type="text" id="editWebsite" placeholder="e.g., github.com">
+            </div>
+            <div class="form-group">
+                <label for="editUsername">Username / Email</label>
+                <input type="text" id="editUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="editPassword">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="editPassword" placeholder="Enter password">
+                    <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
                 </div>
-                <div class="form-group">
-                    <label for="editUsername">Username / Email</label>
-                    <input type="text" id="editUsername" required placeholder="Enter username">
-                </div>
-                <div class="form-group">
-                    <label for="editPassword">Password</label>
-                    <div class="input-wrap">
-                        <input type="password" id="editPassword" required placeholder="Enter password">
-                        <button type="button" class="toggle-pw" tabindex="-1">👁️</button>
-                    </div>
-                </div>
-                <div style="display:flex;gap:8px;margin-bottom:16px;">
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('edit')" style="font-size:13px;">⚡ Generate Password</button>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Update Password</button>
-            </form>
+            </div>
+            <div style="margin-bottom:16px;">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="openGenerator('edit')" style="font-size:13px;">⚡ Generate Password</button>
+            </div>
+            <button id="editSaveBtn" class="btn btn-primary btn-block" onclick="submitEditPassword()">Update Password</button>
         </div>
     </div>
 
@@ -121,12 +119,12 @@
                 <div class="view-site-header" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">
                     <div class="view-favicon" id="viewFavicon">🔐</div>
                     <div>
-                        <div id="viewWebsite" style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;"></div>
+                        <div id="viewWebsite" style="font-size:18px;font-weight:700;font-family:'Instrument Serif',serif;"></div>
                     </div>
                 </div>
                 <button class="close-btn" onclick="closeViewModal()">✕</button>
             </div>
-            <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+            <div class="divider"></div>
             <div class="detail-row">
                 <div class="detail-label">Username / Email</div>
                 <div class="detail-value">
@@ -139,7 +137,7 @@
             <div class="detail-row">
                 <div class="detail-label">Password</div>
                 <div class="detail-value">
-                    <span id="viewPassword" style="font-family:monospace;letter-spacing:1px;">••••••••</span>
+                    <span id="viewPassword">••••••••</span>
                     <div class="detail-actions">
                         <button class="btn-icon" onclick="togglePassword()" title="Show/hide">👁️</button>
                         <button class="btn-icon" onclick="copyPassword()" title="Copy password">📋</button>
@@ -175,7 +173,7 @@
                 <button class="close-btn" onclick="closeGenerator()">✕</button>
             </div>
             <div class="generator-row">
-                <input type="text" id="genOutput" readonly placeholder="Generated password" style="font-family:monospace;font-size:13px;">
+                <input type="text" id="genOutput" readonly placeholder="Generated password">
                 <button class="btn btn-ghost btn-sm" id="genRefresh" title="Regenerate">🔄</button>
                 <button class="btn btn-ghost btn-sm" id="genCopy" title="Copy">📋</button>
             </div>
@@ -190,7 +188,7 @@
                 <label class="gen-check"><input type="checkbox" id="genNums"  checked> 0–9</label>
                 <label class="gen-check"><input type="checkbox" id="genSyms"> !@#$…</label>
             </div>
-            <button class="btn btn-primary btn-block" id="useGenPassword" style="margin-top:8px;">Use This Password</button>
+            <button class="btn btn-primary btn-block" id="useGenPassword" style="margin-top:14px;">Use This Password</button>
         </div>
     </div>
 
