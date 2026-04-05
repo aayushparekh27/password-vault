@@ -24,8 +24,14 @@
     <!-- ─── Main Content ───────────────────────────────────── -->
     <div class="dashboard-content">
         <div class="vault-header">
-            <h1>Your Passwords</h1>
-            <button class="btn btn-primary" onclick="openAddModal()">+ Add New</button>
+            <div>
+                <h1>Your Passwords</h1>
+            </div>
+            <div class="vault-header-actions">
+                <button class="btn btn-outline btn-sm" onclick="openImportModal()" title="Import from CSV">⬆️ Import</button>
+                <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Export to CSV">⬇️ Export</button>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Add New</button>
+            </div>
         </div>
 
         <!-- Stats -->
@@ -36,13 +42,22 @@
                     <div class="stat-label">Saved Passwords</div>
                 </div>
             </div>
+            <span class="badge badge-old" id="oldPasswordsBadge" style="display:none;align-self:center;"></span>
         </div>
 
-        <!-- Search -->
-        <div class="search-bar">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Search by website or username…">
-            <button class="search-clear" id="searchClear">✕</button>
+        <!-- Search + Sort -->
+        <div class="search-sort-row">
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search by website or username…">
+                <button class="search-clear" id="searchClear">✕</button>
+            </div>
+            <select id="sortSelect" class="sort-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="az">A → Z</option>
+                <option value="za">Z → A</option>
+            </select>
         </div>
 
         <!-- Grid -->
@@ -189,6 +204,28 @@
                 <label class="gen-check"><input type="checkbox" id="genSyms"> !@#$…</label>
             </div>
             <button class="btn btn-primary btn-block" id="useGenPassword" style="margin-top:14px;">Use This Password</button>
+        </div>
+    </div>
+
+    <!-- ─── Import Modal ───────────────────────────────────── -->
+    <div id="importModal" class="modal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <h2>⬆️ Import Passwords</h2>
+                <button class="close-btn" onclick="closeModal('importModal')">✕</button>
+            </div>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
+                Upload a <strong style="color:var(--text2)">CSV file</strong> with columns:<br>
+                <code style="font-size:12px;color:var(--accent2)">website, username, password</code><br>
+                Compatible with most password managers (Chrome, Firefox, Bitwarden, etc.)
+            </p>
+            <div class="import-drop-zone" onclick="document.getElementById('csvFileInput').click()">
+                <div class="import-drop-icon">📂</div>
+                <div>Click to choose a CSV file</div>
+                <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+            </div>
+            <div id="importPreview" style="margin-top:16px;"></div>
+            <button id="confirmImportBtn" class="btn btn-primary btn-block" onclick="confirmImport()" style="display:none;margin-top:16px;">⬆️ Import Passwords</button>
         </div>
     </div>
 

@@ -44,7 +44,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle noise texture overlay */
 body::before {
   content: '';
   position: fixed; inset: 0;
@@ -322,7 +321,9 @@ input:focus {
   margin-bottom: 32px; gap: 16px; flex-wrap: wrap;
 }
 .vault-header h1 { font-size: 32px; color: var(--text); }
-.vault-stats { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.vault-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.vault-stats { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; }
 .stat-card {
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 18px 22px;
@@ -334,8 +335,29 @@ input:focus {
 }
 .stat-label { font-size: 12px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; font-family: 'Geist', sans-serif; }
 
-/* ─── Search ─────────────────────────────────────────────── */
-.search-bar { position: relative; margin-bottom: 28px; }
+/* ─── Badges ─────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 700; font-family: 'Geist', sans-serif;
+  padding: 2px 6px; border-radius: 99px; letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.badge-old {
+  background: rgba(224,112,112,0.15);
+  color: var(--danger);
+  border: 1px solid rgba(224,112,112,0.3);
+}
+.badge-dupe {
+  background: rgba(212,168,75,0.12);
+  color: var(--accent2);
+  border: 1px solid rgba(212,168,75,0.3);
+}
+
+/* ─── Search + Sort Row ──────────────────────────────────── */
+.search-sort-row {
+  display: flex; gap: 10px; margin-bottom: 28px; align-items: stretch;
+}
+.search-bar { position: relative; flex: 1; }
 .search-icon {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   color: var(--text3); font-size: 15px; pointer-events: none;
@@ -354,6 +376,19 @@ input:focus {
 }
 .search-clear.show { display: flex; }
 .search-clear:hover { color: var(--text2); background: var(--surface2); }
+
+.sort-select {
+  width: auto; min-width: 148px; padding: 11px 14px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--text2); border-radius: var(--radius-sm);
+  font-size: 13px; cursor: pointer; flex-shrink: 0;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a564e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.sort-select:focus { border-color: rgba(212,168,75,0.5); box-shadow: 0 0 0 3px rgba(212,168,75,0.1); }
 
 /* ─── Vault Grid ─────────────────────────────────────────── */
 .vault-grid {
@@ -374,6 +409,11 @@ input:focus {
   transform: translateY(-1px);
   box-shadow: 0 8px 28px rgba(0,0,0,0.35);
 }
+.vault-item--old {
+  border-color: rgba(224,112,112,0.18);
+}
+.vault-item--old:hover { border-color: rgba(224,112,112,0.35); }
+
 .vault-item-header {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; cursor: pointer;
@@ -387,6 +427,7 @@ input:focus {
   font-size: 17px; flex-shrink: 0; overflow: hidden;
 }
 .site-favicon img { width: 100%; height: 100%; object-fit: cover; border-radius: 9px; }
+.site-name-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .site-name { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .site-username { font-size: 12px; color: var(--text3); margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .item-actions { display: flex; gap: 2px; flex-shrink: 0; }
@@ -419,6 +460,7 @@ input:focus {
   border-radius: 16px; padding: 32px; width: 100%; max-width: 440px;
   animation: modalIn 0.28s cubic-bezier(0.34,1.4,0.64,1) both;
   position: relative; box-shadow: var(--shadowLg);
+  max-height: 90vh; overflow-y: auto;
 }
 @keyframes modalIn {
   from { opacity:0; transform:scale(0.94) translateY(10px); }
@@ -487,6 +529,61 @@ input:focus {
 .delete-site { color: var(--accent2); font-weight: 600; margin-top: 6px; font-size: 15px; font-family: 'Geist', sans-serif; }
 .delete-modal .modal-actions { margin-top: 24px; justify-content: center; }
 
+/* ─── Import Modal ───────────────────────────────────────── */
+.import-drop-zone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--trans);
+  color: var(--text3);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.import-drop-zone:hover {
+  border-color: var(--accent);
+  background: var(--accentDim);
+  color: var(--text2);
+}
+.import-drop-icon { font-size: 32px; margin-bottom: 10px; }
+
+.import-preview-header {
+  font-size: 13px; color: var(--text3); margin-bottom: 10px;
+}
+.import-preview-header strong { color: var(--accent2); }
+
+.import-table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.import-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; font-family: 'Geist', sans-serif;
+}
+.import-table th {
+  background: var(--bg3); color: var(--text3);
+  padding: 8px 12px; text-align: left;
+  font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.import-table td {
+  padding: 8px 12px; color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  max-width: 140px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.import-table tr:last-child td { border-bottom: none; }
+.import-table td.mono { font-family: 'Geist Mono', monospace; color: var(--text3); letter-spacing: 1px; }
+
+.import-error-box {
+  background: var(--dangerDim);
+  border: 1px solid rgba(224,112,112,0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 13px; line-height: 1.7;
+  padding: 14px 16px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  font-family: 'Geist', sans-serif;
+}
+
 /* ─── Section Divider ────────────────────────────────────── */
 .divider {
   height: 1px; background: var(--border);
@@ -502,6 +599,9 @@ input:focus {
   .vault-grid { grid-template-columns: 1fr; }
   .auth-card { padding: 32px 22px; }
   .modal-content { padding: 26px 20px; }
+  .search-sort-row { flex-direction: column; }
+  .sort-select { width: 100%; }
+  .vault-header-actions { gap: 6px; }
 }
 
 @media (max-width: 480px) {
@@ -509,4 +609,5 @@ input:focus {
   .nav-links .btn-outline { display: none; }
   .nav-email { display: none; }
   .features { grid-template-columns: 1fr; }
+  .vault-header { flex-direction: column; align-items: flex-start; gap: 12px; }
 }

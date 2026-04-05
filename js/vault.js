@@ -4,9 +4,9 @@ let currentEditItem = null;
 let itemToDelete    = null;
 let allItems        = [];
 let _genTarget      = 'add';
+let currentSort     = 'newest';
 
 document.addEventListener('DOMContentLoaded', function () {
-
     if (window.location.pathname.includes('dashboard')) {
         initDashboard();
     }
@@ -35,6 +35,13 @@ async function initDashboard() {
         });
     }
 
+    // ─── Sort ────────────────────────────────────────────────
+    document.getElementById('sortSelect')?.addEventListener('change', function () {
+        currentSort = this.value;
+        const term = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        searchPasswords(term);
+    });
+
     // ─── Password Generator listeners ──────────────────────
     document.getElementById('genRefresh')?.addEventListener('click', generatePassword);
     document.getElementById('genLength')?.addEventListener('input', function () {
@@ -60,6 +67,9 @@ async function initDashboard() {
         closeModal('generatorModal');
     });
 
+    // ─── CSV Import listener ────────────────────────────────
+    document.getElementById('csvFileInput')?.addEventListener('change', handleCsvImport);
+
     // ─── Toggle pw inside modals ────────────────────────────
     document.querySelectorAll('.toggle-pw').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -79,7 +89,7 @@ async function initDashboard() {
     // ─── Keyboard shortcuts ─────────────────────────────────
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            ['addModal','editModal','viewModal','deleteModal','generatorModal']
+            ['addModal','editModal','viewModal','deleteModal','generatorModal','importModal']
                 .forEach(id => closeModal(id));
         }
     });
@@ -134,6 +144,42 @@ async function loadVaultItems() {
 function updateStats(count) {
     const el = document.getElementById('totalPasswords');
     if (el) el.textContent = count;
+
+    // Show old password count badge
+    const oldCount = allItems.filter(i => isOldPassword(i)).length;
+    const oldBadge = document.getElementById('oldPasswordsBadge');
+    if (oldBadge) {
+        oldBadge.textContent = oldCount > 0 ? `⚠️ ${oldCount} old` : '';
+        oldBadge.style.display = oldCount > 0 ? 'inline-flex' : 'none';
+    }
+}
+
+// ─── Password Age Check (90 days) ──────────────────────────
+function isOldPassword(item) {
+    if (!item.created_at) return false;
+    const days = (Date.now() - new Date(item.created_at)) / (1000 * 60 * 60 * 24);
+    return days > 90;
+}
+
+// ─── Duplicate Detection ────────────────────────────────────
+function getDuplicateWebsites() {
+    const counts = {};
+    allItems.forEach(i => {
+        const d = extractDomain(i.website);
+        counts[d] = (counts[d] || 0) + 1;
+    });
+    return new Set(Object.entries(counts).filter(([,v]) => v > 1).map(([k]) => k));
+}
+
+// ─── Sort Items ──────────────────────────────────────────────
+function sortItems(items) {
+    const arr = [...items];
+    switch (currentSort) {
+        case 'az':     return arr.sort((a, b) => a.website.localeCompare(b.website));
+        case 'za':     return arr.sort((a, b) => b.website.localeCompare(a.website));
+        case 'oldest': return arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        default:       return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
 }
 
 // ─── Display ────────────────────────────────────────────────
@@ -146,30 +192,41 @@ function displayVaultItems(items) {
         return;
     }
 
-    grid.innerHTML = items.map((item, i) => {
-        const domain = extractDomain(item.website);
-        const emoji  = getDomainEmoji(domain);
+    const sorted = sortItems(items);
+    const duplicates = getDuplicateWebsites();
+
+    // Re-map sorted items to allItems indices for click handlers
+    grid.innerHTML = sorted.map((item, i) => {
+        const domain     = extractDomain(item.website);
+        const emoji      = getDomainEmoji(domain);
         const faviconHtml = `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64"
                                   onerror="this.parentElement.textContent='${emoji}'"
                                   alt="${escapeHtml(item.website)}">`;
         const date = item.created_at
             ? new Date(item.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
             : '';
+        const isOld  = isOldPassword(item);
+        const isDupe = duplicates.has(domain);
+        const itemIdx = allItems.findIndex(x => x.id === item.id);
 
         return `
-        <div class="vault-item" style="animation-delay:${i * 40}ms">
-            <div class="vault-item-header" onclick="viewPassword(allItems[${i}])">
+        <div class="vault-item${isOld ? ' vault-item--old' : ''}" style="animation-delay:${i * 40}ms">
+            <div class="vault-item-header" onclick="viewPassword(allItems[${itemIdx}])">
                 <div class="site-info">
                     <div class="site-favicon">${faviconHtml}</div>
-                    <div>
-                        <div class="site-name">${escapeHtml(item.website)}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="site-name-row">
+                            <span class="site-name">${escapeHtml(item.website)}</span>
+                            ${isDupe ? '<span class="badge badge-dupe" title="Multiple accounts for this site">2+</span>' : ''}
+                            ${isOld  ? '<span class="badge badge-old" title="Password is over 90 days old">Old</span>' : ''}
+                        </div>
                         <div class="site-username">${escapeHtml(item.username)}</div>
                     </div>
                 </div>
                 <div class="item-actions" onclick="event.stopPropagation()">
-                    <button class="btn-icon" onclick="copyItemPassword(${i})" title="Copy password">📋</button>
-                    <button class="btn-icon" onclick="openEditModal(allItems[${i}])" title="Edit">✏️</button>
-                    <button class="btn-icon" onclick="openDeleteModal(allItems[${i}])" title="Delete">🗑️</button>
+                    <button class="btn-icon" onclick="copyItemPassword(${itemIdx})" title="Copy password">📋</button>
+                    <button class="btn-icon" onclick="openEditModal(allItems[${itemIdx}])" title="Edit">✏️</button>
+                    <button class="btn-icon" onclick="openDeleteModal(allItems[${itemIdx}])" title="Delete">🗑️</button>
                 </div>
             </div>
             ${date ? `<div class="item-date">Added ${date}</div>` : ''}
@@ -202,44 +259,34 @@ async function submitAddPassword() {
     const website  = document.getElementById('addWebsite')?.value.trim();
     const username = document.getElementById('addUsername')?.value.trim();
     const password = document.getElementById('addPassword')?.value;
-    const btn      = document.getElementById('addSaveBtn');
 
-    if (!website)  { toast('Please enter a website/app name', 'error'); return; }
-    if (!username) { toast('Please enter a username or email', 'error'); return; }
+    if (!website)  { toast('Please enter a website', 'error'); return; }
+    if (!username) { toast('Please enter a username', 'error'); return; }
     if (!password) { toast('Please enter a password', 'error'); return; }
 
-    btn.textContent = 'Saving…'; btn.disabled = true;
+    const btn = document.getElementById('addSaveBtn');
+    if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
 
     try {
-        const { data: { user }, error: ue } = await window.supabaseClient.auth.getUser();
-        if (ue || !user) { window.location.href = 'login.html'; return; }
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
 
-        const { error } = await window.supabaseClient
-            .from('vault_items')
-            .insert([{ user_id: user.id, website, username, encrypted_password: encrypt(password) }]);
+        const { error } = await window.supabaseClient.from('vault_items').insert([{
+            user_id:            user.id,
+            website:            website,
+            username:           username,
+            encrypted_password: encrypt(password),
+        }]);
 
-        if (error) {
-            const msg = error.code === '42P01' ? 'vault_items table not found in Supabase!' : 'Error: ' + error.message;
-            toast(msg, 'error'); return;
-        }
+        if (error) { toast('Error: ' + error.message, 'error'); return; }
 
         toast('Password saved!', 'success');
-        // Reset fields
-        document.getElementById('addWebsite').value  = '';
-        document.getElementById('addUsername').value = '';
-        document.getElementById('addPassword').value = '';
-        const fill = document.getElementById('addStrengthFill');
-        const lbl  = document.getElementById('addStrengthLabel');
-        if (fill) fill.style.width = '0%';
-        if (lbl)  lbl.textContent  = '';
-
-        closeModal('addModal');
+        closeAddModal();
         await loadVaultItems();
-
     } catch (err) {
         toast(err.message || 'Something went wrong', 'error');
     } finally {
-        btn.textContent = 'Save Password'; btn.disabled = false;
+        if (btn) { btn.textContent = 'Save Password'; btn.disabled = false; }
     }
 }
 
@@ -251,30 +298,226 @@ async function submitEditPassword() {
     const website  = document.getElementById('editWebsite')?.value.trim();
     const username = document.getElementById('editUsername')?.value.trim();
     const password = document.getElementById('editPassword')?.value;
-    const btn      = document.getElementById('editSaveBtn');
 
-    if (!website)  { toast('Please enter a website/app name', 'error'); return; }
-    if (!username) { toast('Please enter a username or email', 'error'); return; }
+    if (!website)  { toast('Please enter a website', 'error'); return; }
+    if (!username) { toast('Please enter a username', 'error'); return; }
     if (!password) { toast('Please enter a password', 'error'); return; }
 
-    btn.textContent = 'Updating…'; btn.disabled = true;
+    const btn = document.getElementById('editSaveBtn');
+    if (btn) { btn.textContent = 'Updating…'; btn.disabled = true; }
 
     try {
-        const { error } = await window.supabaseClient
-            .from('vault_items')
-            .update({ website, username, encrypted_password: encrypt(password) })
-            .eq('id', id);
+        const { error } = await window.supabaseClient.from('vault_items').update({
+            website,
+            username,
+            encrypted_password: encrypt(password),
+        }).eq('id', id);
 
         if (error) { toast('Error: ' + error.message, 'error'); return; }
-        toast('Password updated!', 'success');
-        closeModal('editModal');
-        closeModal('viewModal');
-        await loadVaultItems();
 
+        toast('Password updated!', 'success');
+        closeEditModal();
+        await loadVaultItems();
     } catch (err) {
         toast(err.message || 'Something went wrong', 'error');
     } finally {
-        btn.textContent = 'Update Password'; btn.disabled = false;
+        if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+    }
+}
+
+// ─── CSV Export ──────────────────────────────────────────────
+function exportCSV() {
+    if (!allItems || allItems.length === 0) {
+        toast('No passwords to export', 'info'); return;
+    }
+
+    const headers = ['Website', 'Username', 'Password', 'Added On'];
+    const rows = allItems.map(item => {
+        const pw   = (() => { try { return decrypt(item.encrypted_password); } catch { return ''; } })();
+        const date = item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN') : '';
+        return [item.website, item.username, pw, date].map(csvEscape).join(',');
+    });
+
+    const csv     = [headers.join(','), ...rows].join('\n');
+    const blob    = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url     = URL.createObjectURL(blob);
+    const link    = document.createElement('a');
+    link.href     = url;
+    link.download = `my-vault-export-${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast(`Exported ${allItems.length} passwords`, 'success');
+}
+
+function csvEscape(val) {
+    const s = String(val ?? '');
+    return (s.includes(',') || s.includes('"') || s.includes('\n'))
+        ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// ─── CSV Import ──────────────────────────────────────────────
+function openImportModal() {
+    document.getElementById('importPreview').innerHTML = '';
+    document.getElementById('confirmImportBtn').style.display = 'none';
+    document.getElementById('csvFileInput').value = '';
+    window._importRows = [];
+    openModal('importModal');
+}
+
+async function handleCsvImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('importPreview');
+    preview.innerHTML = '<p style="color:var(--text3);font-size:13px;">Reading file…</p>';
+    document.getElementById('confirmImportBtn').style.display = 'none';
+
+    let text;
+    try {
+        text = await file.text();
+    } catch (err) {
+        showImportError('Could not read file: ' + err.message); return;
+    }
+
+    const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+        showImportError('File is empty or has only one row. Need at least a header + one data row.'); return;
+    }
+
+    // ── Detect columns from header ──────────────────────────
+    const headerLine = lines[0].toLowerCase();
+    const headerCols = parseCsvLine(headerLine).map(h => h.trim().replace(/['"]/g, ''));
+    const hasHeader  = headerCols.some(h =>
+        ['website','url','name','username','login_uri','login_username','password','login_password'].includes(h)
+    );
+
+    // Map column names → indices
+    // Supports: My Vault, Chrome, Bitwarden, Firefox, LastPass
+    let colWebsite  = -1;
+    let colUsername = -1;
+    let colPassword = -1;
+
+    if (hasHeader) {
+        headerCols.forEach((h, i) => {
+            if (['url','website','login_uri','name'].includes(h) && colWebsite  < 0) colWebsite  = i;
+            if (['username','login_username','user name','email'].includes(h) && colUsername < 0) colUsername = i;
+            if (['password','login_password'].includes(h)        && colPassword < 0) colPassword = i;
+        });
+    } else {
+        // No header — assume: website(0), username(1), password(2)
+        colWebsite = 0; colUsername = 1; colPassword = 2;
+    }
+
+    if (colWebsite < 0 || colPassword < 0) {
+        showImportError(
+            `Could not find required columns.\n\nDetected columns: ${hasHeader ? headerCols.join(', ') : 'none (no header)'}\n\nRequired: a "website" or "url" column, and a "password" column.`
+        ); return;
+    }
+
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = [];
+    const skipped = [];
+
+    for (let i = 0; i < dataLines.length; i++) {
+        const line = dataLines[i].trim();
+        if (!line) continue;
+        const cols = parseCsvLine(line);
+
+        const website  = (cols[colWebsite]  || '').trim();
+        const username = colUsername >= 0 ? (cols[colUsername] || '').trim() : '';
+        const password = (cols[colPassword] || '').trim();
+
+        if (!website && !password) continue; // blank row
+        if (!password) { skipped.push(`Row ${i + 2}: missing password`); continue; }
+
+        rows.push({ website: website || '(unknown)', username, password });
+    }
+
+    if (rows.length === 0) {
+        showImportError(
+            'No valid rows found.' +
+            (skipped.length ? `\n\nSkipped rows:\n${skipped.slice(0,5).join('\n')}` : '')
+        ); return;
+    }
+
+    window._importRows = rows;
+
+    // Preview table
+    preview.innerHTML = `
+        <div class="import-preview-header">
+            Found <strong>${rows.length}</strong> password${rows.length !== 1 ? 's' : ''} to import
+            ${skipped.length ? `<span style="color:var(--danger);margin-left:8px;">(${skipped.length} skipped)</span>` : ''}
+        </div>
+        <div class="import-table-wrap">
+            <table class="import-table">
+                <thead><tr><th>Website</th><th>Username</th><th>Password</th></tr></thead>
+                <tbody>
+                    ${rows.slice(0, 10).map(r => `
+                    <tr>
+                        <td>${escapeHtml(r.website)}</td>
+                        <td>${escapeHtml(r.username || '—')}</td>
+                        <td class="mono">${'•'.repeat(Math.min(r.password.length, 10))}</td>
+                    </tr>`).join('')}
+                    ${rows.length > 10 ? `<tr><td colspan="3" style="color:var(--text3);text-align:center;font-size:12px;">… aur ${rows.length - 10} aur</td></tr>` : ''}
+                </tbody>
+            </table>
+        </div>`;
+    document.getElementById('confirmImportBtn').style.display = 'block';
+}
+
+function showImportError(msg) {
+    const preview = document.getElementById('importPreview');
+    preview.innerHTML = `<div class="import-error-box">${escapeHtml(msg).replace(/\n/g,'<br>')}</div>`;
+    document.getElementById('confirmImportBtn').style.display = 'none';
+    // Reset file input so same file can be re-chosen
+    document.getElementById('csvFileInput').value = '';
+}
+
+function parseCsvLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes) {
+            result.push(current); current = '';
+        } else { current += ch; }
+    }
+    result.push(current);
+    return result;
+}
+
+async function confirmImport() {
+    const rows = window._importRows || [];
+    if (!rows.length || !window.supabaseClient) return;
+
+    const btn = document.getElementById('confirmImportBtn');
+    btn.textContent = 'Importing…'; btn.disabled = true;
+
+    try {
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
+
+        const payload = rows.map(r => ({
+            user_id:            user.id,
+            website:            r.website,
+            username:           r.username,
+            encrypted_password: encrypt(r.password),
+        }));
+
+        const { error } = await window.supabaseClient.from('vault_items').insert(payload);
+        if (error) { toast('Import error: ' + error.message, 'error'); return; }
+
+        toast(`✅ Imported ${rows.length} passwords successfully!`, 'success', 4000);
+        closeModal('importModal');
+        await loadVaultItems();
+    } catch (err) {
+        toast(err.message || 'Import failed', 'error');
+    } finally {
+        btn.textContent = 'Import Passwords'; btn.disabled = false;
     }
 }
 
